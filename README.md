@@ -1,1 +1,474 @@
-# ChatPot_DEPI
+🎓 University Admission Assistant Chatbot
+
+An AI-powered conversational system that helps students explore and compare international universities using natural language processing and large language models.
+
+📌 Table of Contents
+
+About the Project
+Key Features
+Demo
+Prerequisites
+Installation
+Quick Start
+Usage Examples
+Project Structure
+Technologies Used
+How It Works
+API Reference
+Testing
+Deployment
+Roadmap
+Contributing
+License
+Contact & Support
+
+
+📖 About the Project
+This project is a complete AI-powered university admission chatbot designed to help students find the perfect university match. Instead of manually searching through dozens of websites, students can simply ask questions in natural language and get intelligent, data-driven responses.
+The chatbot uses:
+
+Natural Language Processing (NLP) to understand student queries
+LangChain to manage multi-turn conversations with memory
+OpenAI GPT to generate human-like responses
+Pandas & Python to efficiently query and filter university data
+Streamlit to create an intuitive web interface
+
+Project Objectives:
+✅ Develop NLP-based chatbot for university information retrieval
+✅ Implement data handling for efficient querying
+✅ Create interactive UI for seamless user experience
+✅ Ensure response accuracy and relevance
+✅ Enable multi-turn conversations with context retention
+
+⭐ Key Features
+🤖 Smart Conversational AI
+
+Understands natural language queries about universities
+Maintains conversation context across multiple messages
+Provides accurate, relevant information from database
+
+🔍 Advanced Search & Filtering
+
+Search by university name, country, program
+Filter by budget, tuition fees, language requirements
+Filter by admission criteria (GPA, IELTS, TOEFL scores)
+Find programs by degree level (Bachelor, Masters, PhD)
+
+📊 Data Exploration
+
+Browse all universities and programs
+View detailed program information
+Compare multiple programs side-by-side
+See statistics about database
+
+💾 Flexible Data Management
+
+Upload custom university datasets (CSV format)
+Automatic data cleaning and preprocessing
+Support for real-world data variations
+
+🌍 Comprehensive University Data
+
+60+ universities across 10+ countries
+Multiple programs per university
+Tuition fees, duration, language requirements
+Admission criteria and program descriptions
+
+
+🎬 Demo
+Try the Live Demo:
+bashstreamlit run app.py
+Sample Conversations:
+Student: "Universities in USA offering Computer Science"
+Bot: Shows Harvard, MIT, Stanford CS programs with details
+Student: "Masters programs under $50,000"
+Bot: Filters and displays affordable programs worldwide
+Student: "What are IELTS requirements for Harvard?"
+Bot: Retrieves and displays admission requirements
+
+📋 Prerequisites
+Before you begin, ensure you have:
+
+Python 3.8 or higher - Download from python.org
+pip - Python package manager (included with Python)
+Git - Download from git-scm.com
+OpenAI API Key - Get from platform.openai.com
+Text Editor - VS Code, PyCharm, or any editor
+2GB RAM minimum - For running the application
+
+Check Installation:
+bashpython --version
+pip --version
+git --version
+
+🚀 Installation
+Step 1: Clone Repository
+bashgit clone https://github.com/YOUR_USERNAME/university-admission-chatbot.git
+cd university-admission-chatbot
+Step 2: Create Virtual Environment
+On macOS/Linux:
+bashpython3 -m venv venv
+source venv/bin/activate
+On Windows:
+bashpython -m venv venv
+venv\Scripts\activate
+You should see (venv) in your terminal.
+Step 3: Install Dependencies
+bashpip install -r requirements.txt
+This installs:
+
+streamlit - Web UI framework
+langchain - LLM orchestration
+openai - GPT API access
+transformers - NLP models
+pandas - Data processing
+torch - Deep learning library
+
+Step 4: Setup Environment Variables
+bash# Copy the example file
+cp .env.example .env
+
+# Edit .env file and add your OpenAI API key
+# Open .env in your text editor and replace:
+# OPENAI_API_KEY=your_actual_api_key_here
+Getting OpenAI API Key:
+
+Go to https://platform.openai.com/account/api-keys
+Click "Create new secret key"
+Copy the key
+Paste into .env file
+
+Step 5: Preprocess Dataset
+bashpython process_data.py
+You should see: ✅ Data processing complete!
+Step 6: Run the Application
+bashstreamlit run app.py
+Your browser will automatically open to http://localhost:8501
+
+📝 Quick Start
+Running for First Time
+bash# Activate virtual environment
+source venv/bin/activate  # macOS/Linux
+# or
+venv\Scripts\activate     # Windows
+
+# Run the app
+streamlit run app.py
+Deactivating Virtual Environment
+bashdeactivate
+Stopping the App
+Press Ctrl + C in terminal
+
+💬 Usage Examples
+Example 1: Search by Country
+You: "Show me all universities in Canada"
+Bot: Displays all Canadian universities with their programs and tuition fees
+Example 2: Budget Filter
+You: "I have a budget of $40,000, what programs can I afford?"
+Bot: Shows all programs costing less than $40,000 per year
+Example 3: Admission Requirements
+You: "What's the minimum IELTS score for MBA programs?"
+Bot: Retrieves and displays IELTS requirements for all MBA programs
+Example 4: Program Comparison
+You: "Compare Computer Science programs at MIT and Stanford"
+Bot: Shows side-by-side comparison with duration, fees, requirements
+Example 5: Degree Level Filter
+You: "Find all Masters programs in the USA"
+Bot: Lists all Masters degrees available in United States universities
+Example 6: Multi-turn Conversation
+You: "Tell me about universities in UK"
+Bot: Shows British universities
+You: "Which one has the lowest tuition?"
+Bot: Compares tuition and recommends the most affordable
+
+📁 Project Structure
+university-admission-chatbot/
+│
+├── 📂 notebooks/                           # jupyternotebooks
+│   ├── data_preprocessing.ipynb        # Load & preprocess data
+│   ├── NLP_and_Embedding.ipynb         # NLP & entity extraction
+│   ├── rag_system.ipy                  # Database operations
+│   ├── chatbot_engine.ipynb            # Main chatbot logic
+│   └── utils.ipynb                       # Helper functions
+│
+├── 📂 data/                          # Datasets
+│   ├── raw/
+│   │   └── all_programs.csv      # Original data
+│   └── processed/
+│       └── allprograms_processed.csv     # Cleaned data
+│
+├── 📂 src/                     # Jupyter notebooks
+│   ├── __init__.py
+│   ├── UI.py
+│
+├── 📂 docs/                          # Documentation
+│   ├── SETUP_INSTRUCTIONS.md
+│   ├── USAGE_GUIDE.md
+│   ├── ARCHITECTURE.md
+│   ├── API_DOCUMENTATION.md
+│   ├── DEPLOYMENT.md
+│   └── TROUBLESHOOTING.md
+│
+├── 📄 app.py                         # Main Streamlit application
+├── 📄 evaluate.py                    # Performance metrics
+├── 📄 process_data.py                # Data preprocessing script
+├── 📄 requirements.txt               # Python dependencies
+├── 📄 .env.example                   # Environment template
+├── 📄 .gitignore                     # Git ignore rules
+├── 📄 README.md                      # This file
+└── 📄 PROJECT_REPORT.md              # Final report
+File Descriptions:
+FilePurposeapp.pyMain Streamlit web app - runs the chatbot UIsrc/data_loader.pyLoads CSV and preprocesses university datasrc/query_processor.pyExtracts entities and classifies intent from user queriessrc/data_query_handler.pySearches and filters the databasesrc/chatbot_engine.pyOrchestrates all components and manages conversationsrequirements.txtLists all Python package dependencies.envStores sensitive information (API keys)tests/Contains pytest unit tests for all modulesdocs/Complete documentation and guides
+
+🛠️ Technologies Used
+Backend
+
+Python 3.8+ - Core programming language
+LangChain - Manages conversation flow and memory
+OpenAI API - GPT-3.5/GPT-4 for response generation
+Transformers (Hugging Face) - BERT for NLP tasks
+PyTorch - Deep learning framework
+
+Data Processing
+
+Pandas - Data manipulation and analysis
+NumPy - Numerical computing
+Scikit-learn - Machine learning utilities
+
+Frontend
+
+Streamlit - Web UI framework (no HTML/CSS needed)
+Plotly - Data visualization
+
+Development
+
+Pytest - Unit testing framework
+Git - Version control
+GitHub - Repository hosting
+
+Infrastructure
+
+Python venv - Virtual environment
+pip - Package manager
+
+
+🧠 How It Works
+Architecture Flow
+┌─────────────────────────────────────────────────────────────┐
+│                     USER INTERFACE                           │
+│                    (Streamlit - app.py)                      │
+│                                                              │
+│  • Chat input box                                            │
+│  • Display messages & data                                   │
+│  • Data exploration panels                                   │
+└─────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────┐
+│              CHATBOT ENGINE (chatbot_engine.py)              │
+│                                                              │
+│  • Orchestrates components                                   │
+│  • Maintains conversation memory (LangChain)                │
+│  • Generates responses using OpenAI                         │
+└─────────────────────────────────────────────────────────────┘
+                   ↙          ↓          ↖
+       ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+       │   QUERY      │  │     RAG      │  │  RESPONSE    │
+       │  PROCESSOR   │  │    SYSTEM    │  │ GENERATION   │
+       │              │  │              │  │              │
+       │ • Extract    │  │ • Filter by  │  │ • Use LLM    │
+       │   entities   │  │   criteria   │  │ • Format     │
+       │ • Classify   │  │ • Search DB  │  │   answer     │
+       │   intent     │  │ • Aggregate  │  │ • Add context│
+       └──────────────┘  └──────────────┘  └──────────────┘
+                            ↓
+       ┌─────────────────────────────────────┐
+       │     UNIVERSITY DATABASE              │
+       │   (data/processed/universities.csv) │
+       │                                      │
+       │  • 60+ universities                 │
+       │  • 200+ programs                    │
+       │  • Complete details                 │
+       └─────────────────────────────────────┘
+Processing Pipeline
+
+User Input → Student types a question
+Query Processing → Extract entities (university, country, budget, etc.)
+Intent Classification → Understand what student is asking (search, filter, compare)
+Data Retrieval → Query database based on extracted entities
+Response Generation → Use LLM to format data into natural language
+Memory Management → Store conversation for context in next message
+Display → Show response and retrieved data to user
+
+
+🔌 API Reference
+Main Modules
+UniversityDataLoader (data_loader.py)
+pythonloader = UniversityDataLoader("path/to/data.csv")
+loader.preprocess_data()
+universities = loader.get_universities()
+programs = loader.get_programs_by_university("MIT")
+QueryProcessor (query_processor.py)
+pythonprocessor = QueryProcessor()
+entities = processor.extract_entities("Masters in USA under 50000")
+intent = processor.classify_intent("Compare programs")
+UniversityQueryHandler (data_query_handler.py)
+pythonhandler = UniversityQueryHandler(dataframe)
+usa_unis = handler.search_by_country("USA")
+cs_programs = handler.search_by_program("Computer Science")
+affordable = handler.filter_by_budget(40000)
+UniversityChatbot (chatbot_engine.py)
+pythonchatbot = UniversityChatbot(dataframe)
+response, context = chatbot.process_query("Find USA universities")
+See API_DOCUMENTATION.md for detailed specs.
+
+✅ Testing
+Run All Tests
+bashpytest tests/ -v
+Run Specific Test
+bashpytest tests/test_chatbot.py -v
+Run with Coverage
+bashpytest tests/ --cov=src
+Test Results
+All tests should pass with ✅ marks:
+
+✅ test_data_loading
+✅ test_chatbot_initialization
+✅ test_query_processing
+✅ test_entity_extraction
+
+
+🌐 Deployment
+Option 1: Streamlit Cloud (Recommended)
+
+Push code to GitHub
+Go to share.streamlit.io
+Connect GitHub repository
+Select app.py as main file
+Add secrets (OpenAI API key) in settings
+Deploy!
+
+Option 2: Heroku
+bash# Create Procfile
+echo "web: streamlit run app.py" > Procfile
+
+# Push to Heroku
+git push heroku main
+Option 3: Docker
+bashdocker build -t university-chatbot .
+docker run -p 8501:8501 university-chatbot
+See DEPLOYMENT.md for detailed instructions.
+
+🗺️ Roadmap
+✅ Completed
+
+Basic chatbot architecture
+Query processing and NLP
+Streamlit UI
+Data filtering and search
+Multi-turn conversations
+
+🔄 In Progress
+
+RAG (Retrieval-Augmented Generation) implementation
+Vector database integration (FAISS)
+Advanced response ranking
+
+⏳ Planned
+
+Scholarship information
+Application tracking
+User accounts and preferences
+Mobile app version
+Multi-language support
+Voice input/output
+Analytics dashboard
+
+
+🤝 Contributing
+Contributions are welcome! Follow these steps:
+
+Fork the repository
+
+bash   git clone https://github.com/YOUR_USERNAME/university-admission-chatbot.git
+
+Create a feature branch
+
+bash   git checkout -b feature/AmazingFeature
+
+Make your changes and commit
+
+bash   git commit -m "Add: AmazingFeature description"
+
+Push to branch
+
+bash   git push origin feature/AmazingFeature
+
+Open a Pull Request on GitHub
+
+Contribution Guidelines
+
+Follow PEP 8 Python style guide
+Add docstrings to all functions
+Write unit tests for new features
+Update documentation
+Keep commits atomic and well-described
+
+
+📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files...
+
+📞 Contact & Support
+Get Help
+
+📖 Check Troubleshooting Guide
+💬 Open an Issue
+📧 Email: your.email@example.com
+
+Questions?
+
+How do I add more universities?
+How do I change the model?
+How do I customize the UI?
+
+See USAGE_GUIDE.md for FAQs.
+Report Bugs
+Found a bug? Please create an issue with:
+
+Description of the problem
+Steps to reproduce
+Expected vs actual behavior
+Error messages/screenshots
+
+Suggest Features
+Have an idea? Open an issue with feature label and describe your suggestion.
+
+🙏 Acknowledgments
+
+OpenAI for GPT API
+Hugging Face for Transformers
+Streamlit for the amazing framework
+LangChain for conversation management
+All contributors and users
+
+
+📊 Project Statistics
+MetricValueLines of Code2,000+Modules5Functions30+Test Cases10+Documentation Pages6Universities60+Programs200+
+
+🚀 Quick Links
+
+Live Demo
+Setup Guide
+API Docs
+Usage Examples
+Architecture
+
+
+<div align="center">
+Made by
+
+⭐ If you found this helpful, please star the repository!
+</div>
