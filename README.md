@@ -1,4 +1,4 @@
-🎓 University Admission Assistant Chatbot
+##🎓 University Admission Assistant Chatbot
 
 An AI-powered conversational system that helps students explore and compare international universities using natural language processing and large language models.
 
