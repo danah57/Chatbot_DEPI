@@ -1,0 +1,1019 @@
+"""
+DEPI Chatbot - University Programs Finder
+==========================================
+Streamlit chatbot to find university programs with a modern ConvoGPT-style UI.
+"""
+
+import streamlit as st
+import pandas as pd
+import base64
+from pathlib import Path
+
+# -----------------------
+# Page Config
+# -----------------------
+st.set_page_config(
+    page_title="DEPI Chatbot",
+    page_icon="utilities/icons/school.png",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
+
+# -----------------------
+# CSS Styling
+# -----------------------
+st.markdown("""
+<style>
+/* Hide default Streamlit elements */
+#MainMenu, footer, header { visibility: hidden; }
+
+/* App Background */
+.stApp {
+    background: linear-gradient(180deg, #E8F4F8 0%, #F0F8FF 100%);
+    font-family: 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Welcome Card */
+.welcome-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    color: #333;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    margin-bottom: 20px;
+}
+
+/* Hexagon Logo */
+.hexagon-logo {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 40px auto;
+    clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.hexagon-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Input Field Styling */
+.stTextInput input {
+    background-color: #2596BE !important;
+    color: white !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    width: 500px !important;
+    text-align: center !important;
+}
+.stTextInput input:focus {
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+/* Buttons */
+.gradient-button, .stButton button {
+    background: linear-gradient(90deg, #FF5E5E, #FF8C42) !important;
+    color: white !important;
+    border-radius: 10px !important;
+    padding: 8px 22px !important;
+    font-size: 14px !important;
+    font-weight: 600;
+    display: block;
+    margin: 0 auto;
+}
+.gradient-button:hover, .stButton button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(74,144,226,0.3);
+}
+
+/* Wave Header */
+.wave-header {
+    background: linear-gradient(180deg, #B8E6F0 0%, #E8F4F8 100%);
+    height: 120px;
+    border-radius: 0 0 40px 40px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+.wave-header::before {
+    content:'';
+    position:absolute;
+    bottom:0; left:0;
+    width:100%; height:100%;
+    background:url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,50 Q25,30 50,50 T100,50 L100,100 L0,100 Z' fill='%23A8D8E8' opacity='0.3'/%3E%3C/svg%3E") repeat-x;
+    background-size:200px 100px;
+    animation: wave 10s linear infinite;
+}
+@keyframes wave {0%{background-position-x:0;}100%{background-position-x:200px;}}
+
+/* Main Container */
+.main-container {
+    background: white;
+    border-radius: 24px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    max-width: 500px;
+    margin: 0 auto 30px auto;
+}
+
+/* Listening State */
+.listening-container { text-align: center; padding: 40px 20px; }
+.thinking-emoji { font-size: 80px; margin: 20px 0; animation: pulse 2s infinite; }
+@keyframes pulse {0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+
+/* Program Card */
+.program-item {
+    background:#F8F9FA;
+    border-radius:12px;
+    padding:16px;
+    margin:12px 0;
+    border-left:4px solid #4A90E2;
+}
+.program-title { font-size:16px; font-weight:600; color:#333; margin-bottom:8px; }
+.program-details { font-size:14px; color:#666; line-height:1.5; }
+
+/* Info */
+.info-title { font-size:18px; font-weight:600; color:#333; margin-bottom:15px; }
+.info-text { font-size:15px; color:#666; line-height:1.6; margin-bottom:20px; }
+
+/* Icon Buttons */
+.icon-btn {
+    width:50px; height:50px; border-radius:50%;
+    background:#4A90E2; color:white;
+    font-size:20px; display:flex;
+    justify-content:center; align-items:center;
+    cursor:pointer; border:none; margin:auto;
+    box-shadow:0 4px 12px rgba(74,144,226,0.3);
+}
+</style>
+""", unsafe_allow_html=True)
+
+# -----------------------
+# Static Dataset
+# -----------------------
+@st.cache_data
+def load_data():
+    return pd.DataFrame({
+        "program": ["Bachelor of Computer Science", "MBA", "Mechanical Engineering", "Master of Data Science"],
+        "university_name": ["Stanford", "Harvard", "MIT", "UC Berkeley"],
+        "duration": ["4 Years", "2 Years", "4 Years", "2 Years"],
+        "fees": [55000, 73000, 53000, 45000],
+        "ielts": [7.0, 7.5, 7.0, 6.5],
+        "college_link": ["https://stanford.edu", "https://hbs.edu", "https://mit.edu", "https://berkeley.edu"]
+    })
+
+data = load_data()
+
+# -----------------------
+# Session State Init
+# -----------------------
+st.session_state.setdefault("authenticated", False)
+st.session_state.setdefault("user_name", "")
+st.session_state.setdefault("app_state", "welcome")
+st.session_state.setdefault("query_results", None)
+
+# -----------------------
+# Query Processing
+# -----------------------
+def process_query(query: str):
+    query_lower = query.lower()
+    filtered = data.copy()
+    if "mba" in query_lower or "business" in query_lower:
+        filtered = filtered[filtered['program'].str.contains("mba|business", case=False)]
+    elif "engineering" in query_lower:
+        filtered = filtered[filtered['program'].str.contains("engineering", case=False)]
+    if "cheapest" in query_lower:
+        filtered = filtered.sort_values('fees').head(5)
+    return filtered
+
+# -----------------------
+# Welcome Screen
+# -----------------------
+def welcome_screen():
+    # Logo
+    icon_path = Path("utilities/icons/school.png")
+    if icon_path.exists():
+        with open(icon_path, "rb") as img_file:
+            img_data = base64.b64encode(img_file.read()).decode()
+        st.markdown(f'<div class="hexagon-logo"><img src="data:image/png;base64,{img_data}"/></div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="hexagon-logo">💬</div>', unsafe_allow_html=True)
+
+    # Welcome card
+    st.markdown("""
+    <div class="welcome-card">
+        <h1>Welcome</h1>
+        <p>Ask me about programs, fees, requirements, and more!</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Inputs
+    name = st.text_input("Name", placeholder="Enter your name")
+    email = st.text_input("Email", placeholder="Enter your email")
+    if st.button("Get Started"):
+        if name and email:
+            st.session_state.authenticated = True
+            st.session_state.user_name = name
+            st.session_state.app_state = "listening"
+            st.experimental_rerun()
+        else:
+            st.warning("Fill all fields")
+
+# -----------------------
+# Listening Screen
+# -----------------------
+def listening_screen():
+    st.markdown('<div class="wave-header"></div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="main-container">
+        <div class="listening-container">
+            <div class="thinking-emoji">🤔</div>
+            <h2>DEPI Chatbot is listening</h2>
+            <p>Ask questions about programs, fees, universities...</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    query = st.text_input("Query", placeholder="Type your query here")
+    if st.button("Search"):
+        if query:
+            st.session_state.query_results = process_query(query)
+            st.session_state.app_state = "results"
+            st.experimental_rerun()
+
+# -----------------------
+# Results Screen
+# -----------------------
+def results_screen():
+    st.markdown('<div class="wave-header"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
+    results = st.session_state.query_results
+    if results is not None and len(results) > 0:
+        for idx, row in results.iterrows():
+            st.markdown(f"""
+            <div class="program-item">
+                <div class="program-title">{row['program']}</div>
+                <div class="program-details">
+                    🏫 {row['university_name']} | 💰 ${row['fees']} | ⏱️ {row['duration']}<br>
+                    🔗 <a href="{row['college_link']}" target="_blank">Visit</a>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.markdown('<p class="info-text">No programs found matching your query.</p>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    if st.button("Back to Listening"):
+        st.session_state.app_state = "listening"
+        st.experimental_rerun()
+
+# -----------------------
+# Main App Logic
+# -----------------------
+if not st.session_state.authenticated:
+    welcome_screen()
+else:
+    if st.session_state.app_state == "listening":
+        listening_screen()
+    elif st.session_state.app_state == "results":
+        results_screen()
+"""
+DEPI Chatbot - University Programs Finder
+==========================================
+This Streamlit application provides a chatbot interface for finding university programs.
+It uses static data embedded in the code and provides a modern, ConvoGPT-style UI.
+
+Main Features:
+- Welcome/Login screen with user authentication
+- Listening state for query input
+- Results display with program information
+- Natural language query processing
+"""
+
+# Import required libraries
+import streamlit as st  # Main framework for building the web app
+import pandas as pd     # For data manipulation and DataFrame operations
+import time             # For time-related operations (if needed)
+import sys              # For system-specific parameters and functions
+
+# -----------------------
+# Check if running with Streamlit
+# -----------------------
+# This check ensures the app is run with 'streamlit run' command, not directly with Python
+# Streamlit apps require the Streamlit runtime to function properly
+if not hasattr(st, 'session_state') or st.session_state is None:
+    # Display error message if not running with Streamlit
+    print("=" * 60)
+    print("ERROR: This is a Streamlit application!")
+    print("=" * 60)
+    print("\nPlease run this app using the following command:")
+    print("\n  streamlit run Ui.py")
+    print("\nOr if you're in the project directory:")
+    print("\n  streamlit run d:/DEPI project/chatbot/Chatbot_DEPI/Ui.py")
+    print("\n" + "=" * 60)
+    sys.exit(1)  # Exit the program if not running with Streamlit
+
+# -----------------------
+# Page Configuration
+# -----------------------
+# Configure the Streamlit page settings
+st.set_page_config(
+    page_title="Chatbot",                              # Title shown in browser tab
+    page_icon="utilities/icons/school.png",           # Custom icon for the app (school icon)
+    layout="centered",                                 # Center the content on the page
+    initial_sidebar_state="collapsed"                  # Hide sidebar by default
+)
+
+# -----------------------
+# Custom CSS - ConvoGPT Style
+# -----------------------
+# This section defines all the custom styling for the application
+# It creates a modern, clean interface similar to ConvoGPT design
+st.markdown("""
+<style>
+    /* Hide Streamlit default elements */
+    #MainMenu {visibility: hidden;}    /* Hide the hamburger menu */
+    footer {visibility: hidden;}      /* Hide the footer */
+    header {visibility: hidden;}      /* Hide the header */
+    
+    /* Main background - Light blue gradient */
+    .stApp {
+        background: linear-gradient(180deg, #E8F4F8 0%, #F0F8FF 100%);
+        font-family: -apple-system, BlinkMacSystemFont,  'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    /* Welcome card styling - White card with rounded corners */
+    .welcome-card {
+    background: transparent;
+    border-radius: 20px;
+    padding: 30px;
+    color: white;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    font-family: 'Segoe UI', sans-serif;
+    margin-bottom: 20px;
+    }
+    
+    /* Logo container - Centers the logo */
+    .logo-container {
+        margin-bottom: 40px;
+    }
+    
+    /* Hexagon logo shape - Creates a hexagonal container for the icon */
+    .hexagon-logo {
+        width: 90px;
+        height: 90px;
+        margin: 0 auto;
+        clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        box-sizing: border-box;
+    }
+    
+    /* Image inside hexagon - Ensures image fits properly */
+    .hexagon-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+    .stTextInput {
+    display: center !important;
+    position: center !important;
+    border-radius: 10px !important;
+    justify-content: center !important;
+}
+   .stTextInput > div,
+.stTextInput > div > div {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    position: center !important;
+    border-radius: 10px !important;
+}
+    /* Input fields styling - Rounded corners and focus effects */
+    .stTextInput input {
+    background-color: #2596BE !important;
+    color: white !important;
+    align-items: center !important;
+    position: center !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    width: 500px !important;   /* Adjust width to center nicely */
+    text-align: center !important; /* Optional: center text */
+}
+    
+    /* Input field focus state - Blue border when clicked */
+    .stTextInput > div > div > input:focus {
+        border-color: #4A90E2;
+        width:auto;
+        box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    }
+    
+    /* Gradient button styling */
+    .gradient-button {
+         background-color: #FF5E5E !important;
+    color: white !important;
+    padding: 8px 22px !important;  /* smaller button */
+    font-size: 14px !important;
+    border-radius: 10px !important;
+    margin: 0 auto !important;      /* center button */
+    display: block !important;
+    }
+    
+    /* Button hover effect - Slight lift on hover */
+    .gradient-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(74, 144, 226, 0.3);
+    }
+    
+    /* Wave header - Animated wave background at top of listening/results screens */
+    .wave-header {
+        background: linear-gradient(180deg, #B8E6F0 0%, #E8F4F8 100%);
+        height: 120px;
+        border-radius: 0 0 40px 40px;
+        margin: -20px -20px 30px -20px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Animated wave pattern */
+    .wave-header::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,50 Q25,30 50,50 T100,50 L100,100 L0,100 Z' fill='%23A8D8E8' opacity='0.3'/%3E%3C/svg%3E") repeat-x;
+        background-size: 200px 100px;
+        animation: wave 10s linear infinite;  /* Continuous wave animation */
+    }
+    
+    /* Wave animation keyframes */
+    @keyframes wave {
+        0% { background-position-x: 0; }
+        100% { background-position-x: 200px; }
+    }
+    
+    /* Main content container - White card for main content */
+    .main-container {
+        background: white;
+        border-radius: 24px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        max-width: 500px;
+        margin: 0 auto;
+        min-height: 400px;
+    }
+    
+    /* Listening state container - Centers content */
+    .listening-container {
+        text-align: center;
+        padding: 40px 20px;
+    }
+    
+    /* Thinking emoji - Large emoji with pulsing animation */
+    .thinking-emoji {
+        font-size: 80px;
+        margin: 20px 0;
+        animation: pulse 2s ease-in-out infinite;  /* Pulsing animation */
+    }
+    
+    /* Pulse animation - Makes emoji grow and shrink */
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    
+    /* Action buttons container */
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 30px;
+    }
+    
+    /* Action button styling */
+    .action-btn {
+        background: #4A90E2;
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+    
+    /* Icon button - Circular buttons for actions */
+    .icon-btn {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background:white;
+        border: none;
+        color: white;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+    }
+    
+    /* Information display container */
+    .info-container {
+        padding: 20px 0;
+    }
+    
+    /* Info title styling */
+    .info-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 15px;
+    }
+    
+    /* Info text styling */
+    .info-text {
+        font-size: 15px;
+        line-height: 1.6;
+        color: #666;
+        margin-bottom: 20px;
+    }
+    
+    /* Stop button styling */
+    .stop-button {
+        text-align: center;
+        margin-top: 30px;
+        color: #999;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    
+    /* Program card/item styling - Individual program display */
+    .program-item {
+        background: #F8F9FA;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 12px 0;
+        border-left: 4px solid #4A90E2;  /* Blue left border */
+    }
+    
+    /* Program title */
+    .program-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+    }
+    
+    /* Program details text */
+    .program-details {
+        font-size: 14px;
+        color: #666;
+        line-height: 1.5;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# -----------------------
+# Static Dataset
+# -----------------------
+# This function loads the static university programs data
+# @st.cache_data decorator caches the data so it's only loaded once
+@st.cache_data
+def load_static_data():
+    """
+    Load static university programs data
+    
+    Returns:
+        pd.DataFrame: DataFrame containing 15 university programs with:
+            - program: Program name
+            - university_name: University name
+            - duration: Program duration
+            - fees: Total fees in USD
+            - ielts: IELTS score requirement
+            - toefl: TOEFL score requirement
+            - gpa: GPA requirement
+            - course_languageEn: Language of instruction
+            - college_link: University website URL
+    """
+    return pd.DataFrame({
+        "program": [
+            "Bachelor of Computer Science",
+            "Master of Business Administration (MBA)",
+            "Bachelor of Mechanical Engineering",
+            "Master of Data Science",
+            "Bachelor of Architecture",
+            "Master of Artificial Intelligence",
+            "Bachelor of Medicine",
+            "Master of Finance",
+            "Bachelor of Law",
+            "Master of Engineering Management",
+            "Bachelor of Psychology",
+            "Master of Computer Science",
+            "Bachelor of Economics",
+            "Master of Marketing",
+            "Bachelor of Civil Engineering"
+        ],
+        "university_name": [
+            "Stanford University",
+            "Harvard Business School",
+            "MIT - Massachusetts Institute of Technology",
+            "University of California, Berkeley",
+            "Yale University",
+            "Carnegie Mellon University",
+            "Johns Hopkins University",
+            "London School of Economics",
+            "Oxford University",
+            "Cambridge University",
+            "University of Toronto",
+            "ETH Zurich",
+            "University of Chicago",
+            "INSEAD Business School",
+            "Imperial College London"
+        ],
+        "duration": ["4 Years", "2 Years", "4 Years", "2 Years", "5 Years", "2 Years", 
+                    "6 Years", "1 Year", "3 Years", "1.5 Years", "4 Years", "2 Years",
+                    "4 Years", "1 Year", "4 Years"],
+        "fees": [55000, 73000, 53000, 45000, 48000, 52000, 58000, 42000, 35000, 
+                38000, 32000, 28000, 41000, 65000, 44000],
+        "ielts": [7.0, 7.5, 7.0, 6.5, 7.0, 7.0, 7.5, 7.0, 7.5, 7.0, 6.5, 7.0, 7.0, 7.5, 7.0],
+        "toefl": [100, 110, 100, 90, 100, 100, 110, 100, 110, 100, 90, 100, 100, 110, 100],
+        "gpa": ["3.5+", "3.7+", "3.6+", "3.4+", "3.5+", "3.6+", "3.8+", "3.5+", "3.7+",
+               "3.5+", "3.3+", "3.6+", "3.5+", "3.7+", "3.6+"],
+        "course_languageEn": ["English"] * 15,
+        "college_link": [
+            "https://www.stanford.edu",
+            "https://www.hbs.edu",
+            "https://www.mit.edu",
+            "https://www.berkeley.edu",
+            "https://www.yale.edu",
+            "https://www.cmu.edu",
+            "https://www.jhu.edu",
+            "https://www.lse.ac.uk",
+            "https://www.ox.ac.uk",
+            "https://www.cam.ac.uk",
+            "https://www.utoronto.ca",
+            "https://www.ethz.ch",
+            "https://www.uchicago.edu",
+            "https://www.insead.edu",
+            "https://www.imperial.ac.uk"
+        ]
+    })
+
+# Load the static data into a variable
+data = load_static_data()
+
+# -----------------------
+# Initialize Session State
+# -----------------------
+# Session state stores data that persists across reruns of the app
+# setdefault() safely initializes variables only if they don't exist
+st.session_state.setdefault("authenticated", False)      # Whether user has logged in
+st.session_state.setdefault("user_name", "")             # User's name
+st.session_state.setdefault("user_email", "")             # User's email
+st.session_state.setdefault("app_state", "welcome")       # Current app state: welcome, listening, or results
+st.session_state.setdefault("query_results", None)       # Stores filtered program results
+st.session_state.setdefault("messages", [])               # Chat message history
+
+# -----------------------
+# Query Processing Function
+# -----------------------
+def process_query(query):
+    """
+    Process user query and filter programs based on natural language input
+    
+    This function analyzes the user's query and filters the dataset based on:
+    - Budget/fees (e.g., "under $50000", "cheap programs")
+    - Program type (e.g., "MBA", "Engineering", "Computer Science")
+    - Degree level (e.g., "Master", "Bachelor")
+    - IELTS requirements (e.g., "IELTS 7.0")
+    - Duration (e.g., "2 years", "4 years")
+    - University name (e.g., "Stanford")
+    - Special requests (e.g., "cheapest programs")
+    
+    Args:
+        query (str): User's search query in natural language
+        
+    Returns:
+        pd.DataFrame: Filtered DataFrame with matching programs
+    """
+    query_lower = query.lower()  # Convert to lowercase for case-insensitive matching
+    filtered_data = data.copy()  # Start with a copy of all data
+    
+    # Budget filtering - Check for budget-related keywords
+    if any(word in query_lower for word in ["under", "below", "less than", "cheap", "affordable"]):
+        # Extract numbers from the query
+        numbers = [int(s) for s in query.split() if s.replace('$', '').replace(',', '').isdigit()]
+        if numbers:
+            # If number is less than 100, assume it's in thousands (e.g., "50" = $50,000)
+            max_fee = numbers[0] * 1000 if numbers[0] < 100 else numbers[0]
+            filtered_data = filtered_data[filtered_data['fees'] <= max_fee]
+        else:
+            # If no number found, use bottom 30% of fees as "affordable"
+            filtered_data = filtered_data[filtered_data['fees'] <= data['fees'].quantile(0.3)]
+    
+    # Program type filtering - Match program keywords
+    if "mba" in query_lower or "business" in query_lower:
+        # Filter for business/MBA programs
+        filtered_data = filtered_data[filtered_data['program'].str.contains('business|mba', case=False, na=False)]
+    elif "engineering" in query_lower or "engineer" in query_lower:
+        # Filter for engineering programs
+        filtered_data = filtered_data[filtered_data['program'].str.contains('engineering|engineer', case=False, na=False)]
+    elif "computer" in query_lower or "cs" in query_lower or "data science" in query_lower:
+        # Filter for computer science/data science/AI programs
+        filtered_data = filtered_data[filtered_data['program'].str.contains('computer|data science|ai|artificial', case=False, na=False)]
+    elif "master" in query_lower or "masters" in query_lower or "msc" in query_lower or "ms" in query_lower:
+        # Filter for Master's degree programs
+        filtered_data = filtered_data[filtered_data['program'].str.contains('master|msc|ms|ma|mba', case=False, na=False)]
+    elif "bachelor" in query_lower or "ba" in query_lower or "bs" in query_lower:
+        # Filter for Bachelor's degree programs
+        filtered_data = filtered_data[filtered_data['program'].str.contains('bachelor|ba|bs|b.tech', case=False, na=False)]
+    
+    # IELTS filtering - Extract IELTS score requirement
+    if "ielts" in query_lower:
+        # Find numbers in the query (IELTS scores)
+        numbers = [float(s) for s in query.split() if s.replace('.', '').isdigit()]
+        if numbers:
+            ielts_req = numbers[0]
+            # Show programs with IELTS requirement less than or equal to specified
+            filtered_data = filtered_data[filtered_data['ielts'] <= ielts_req]
+    
+    # Duration filtering - Match duration keywords
+    if "year" in query_lower:
+        if "2" in query or "two" in query_lower:
+            # Filter for 2-year programs
+            filtered_data = filtered_data[filtered_data['duration'].str.contains('2', na=False)]
+        elif "4" in query or "four" in query_lower:
+            # Filter for 4-year programs
+            filtered_data = filtered_data[filtered_data['duration'].str.contains('4', na=False)]
+    
+    # University name search - Check if any university name is mentioned
+    for uni in data['university_name'].unique():
+        if uni.lower() in query_lower:
+            # Filter for specific university
+            filtered_data = filtered_data[filtered_data['university_name'] == uni]
+            break
+    
+    # Sort by fees if asking for cheapest
+    if "cheapest" in query_lower or "lowest" in query_lower:
+        # Sort by fees ascending and return top 5 cheapest
+        filtered_data = filtered_data.sort_values('fees').head(5)
+    
+    return filtered_data
+
+# -----------------------
+# Welcome Screen
+# -----------------------
+# Display welcome/login screen if user is not authenticated
+if not st.session_state.get("authenticated", False):
+    # Display logo with hexagon shape
+    import base64  # For encoding image to base64
+    from pathlib import Path  # For file path handling
+    
+    try:
+        # Try to load and display the custom school icon
+        icon_path = Path("utilities/icons/school.png")
+        if icon_path.exists():
+            # Read the image file and encode it to base64 for embedding in HTML
+            with open(icon_path, "rb") as img_file:
+                img_data = base64.b64encode(img_file.read()).decode()
+            
+            # Display the icon in a hexagon shape
+            st.markdown(f"""
+            <div style="text-align: center; margin: 20px 0;">
+                <div class="hexagon-logo" style="display: inline-block;">
+                    <img src="data:image/png;base64,{img_data}" alt="School Icon" style="width: 50px; height: 50px; object-fit: contain;" />
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            # Fallback to emoji if image not found
+            st.markdown("""
+            <div style="text-align: center; margin: 20px 0;">
+                <div class="hexagon-logo" style="display: inline-block; font-size: 40px;">💬</div>
+            </div>
+            """, unsafe_allow_html=True)
+    except Exception as e:
+        # Fallback to emoji on any error
+        st.markdown("""
+        <div style="text-align: center; margin: 20px 0;">
+            <div class="hexagon-logo" style="display: inline-block; font-size: 40px;">💬</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Display welcome message card
+    st.markdown("""
+    <div class="welcome-card">
+        <h1 style="font-size: 28px; margin: 20px 0 10px 0; color: #333;">Welcome</h1>
+        <p style="color: #666; margin-bottom: 30px; font-size: 15px;">
+            Ask me about programs, fees, requirements, and more! <br>
+            Find your perfect university match in seconds.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # User input form
+    with st.container():
+        st.markdown("<div style='max-width: 450px; margin: 0 auto;'>", unsafe_allow_html=True)
+        
+        # Name input field (label is hidden, only placeholder shows)
+        name = st.text_input("Name", placeholder="👤 Enter your name", key="name_input", label_visibility="collapsed")
+        
+        # Email input field (label is hidden, only placeholder shows)
+        email = st.text_input("Email", placeholder="✉️ Enter email address", key="email_input", label_visibility="collapsed")
+        
+        # Center the button using columns
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            # "Get started" button
+            if st.button("Get started", use_container_width=True, type="primary"):
+                if name and email:
+                    # If both fields are filled, authenticate user and move to listening state
+                    st.session_state.authenticated = True
+                    st.session_state.user_name = name
+                    st.session_state.user_email = email
+                    st.session_state.app_state = "listening"
+                    st.rerun()  # Refresh the page to show listening screen
+                else:
+                    # Show warning if fields are empty
+                    st.warning("Please fill in all fields")
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+    
+    # Footer text
+    st.markdown("""
+    <div style="text-align: center; margin-top: 30px; color: white ; font-size: 12px;">
+        *We require access to process your queries for better assistance*
+    </div>
+    """, unsafe_allow_html=True)
+
+# -----------------------
+# Main Application (After Authentication)
+# -----------------------
+# This section runs after user has logged in
+else:
+    # Listening State - User can input queries here
+    if st.session_state.app_state == "listening":
+        # Display listening screen with wave header and thinking emoji
+        st.markdown("""
+        <div class="wave-header"></div>
+        <div class="main-container">
+            <div class="listening-container">
+                <div class="thinking-emoji">🤔</div>
+                <h2 style="font-size: 22px; font-weight: 600; color: #333; margin: 20px 0 10px 0;">
+                    DEPI Chatbot is listening
+                </h2>
+                <p style="color: #666; font-size: 15px; margin-bottom: 30px;">
+                    Begin asking questions to get help with finding university programs
+                </p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Action buttons row
+        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+        with col1:
+            # Suggest button - Shows random 3 programs
+            if st.button("💡 Suggest", use_container_width=True, type="primary"):
+                st.session_state.app_state = "results"
+                st.session_state.query_results = data.sample(3)  # Random 3 programs
+                st.rerun()
+        
+        with col2:
+            # Lightning icon button (placeholder for future functionality)
+            st.markdown("""
+            <div style="text-align: center;">
+                <button class="icon-btn" style="background: #4A90E2;">⚡</button>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            # Speaker icon button (placeholder for future functionality)
+            st.markdown("""
+            <div style="text-align: center;">
+                <button class="icon-btn" style="background: #4A90E2;">🔊</button>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Query input section
+        st.markdown("<div style='max-width: 500px; margin: 20px auto;'>", unsafe_allow_html=True)
+        
+        # Text input for user query
+        user_query = st.text_input("Query", placeholder="Ask about programs, fees, universities...", key="query_input", label_visibility="collapsed")
+        
+        # Search button - Processes the query
+        if st.button("🔍 Search", use_container_width=True, type="primary"):
+            if user_query:
+                # Process query and show results
+                st.session_state.app_state = "results"
+                st.session_state.query_results = process_query(user_query)  # Filter programs based on query
+                st.session_state.messages.append({"role": "user", "content": user_query})  # Save to message history
+                st.rerun()
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Stop Listening button - Returns to welcome screen
+        if st.button("Stop Listening", use_container_width=True):
+            st.session_state.app_state = "welcome"
+            st.session_state.authenticated = False
+            st.rerun()
+    
+    # Results State - Display filtered program results
+    elif st.session_state.app_state == "results":
+        # Display results screen with wave header
+        st.markdown("""
+        <div class="wave-header"></div>
+        <div class="main-container">
+            <div class="info-container">
+        """, unsafe_allow_html=True)
+        
+        # Check if there are results to display
+        if st.session_state.query_results is not None and len(st.session_state.query_results) > 0:
+            # Display number of results found
+            st.markdown(f"""
+            <div class="info-title">
+                Found {len(st.session_state.query_results)} program(s) matching your query:
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Display each program result (up to 5)
+            for idx, row in st.session_state.query_results.head(5).iterrows():
+                st.markdown(f"""
+                <div class="program-item">
+                    <div class="program-title">{row['program']}</div>
+                    <div class="program-details">
+                        🏫 {row['university_name']}<br>
+                        💰 Fees: ${row['fees']:,.0f} | ⏱️ {row['duration']} | 📝 IELTS: {row['ielts']}<br>
+                        {f'🔗 <a href="{row["college_link"]}" target="_blank" style="color: #4A90E2;">Visit University</a>' if pd.notna(row['college_link']) else ''}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            # Display message if no results found
+            st.markdown("""
+            <div class="info-title">
+                No programs found
+            </div>
+            <div class="info-text">
+                I couldn't find any programs matching your criteria. Try:
+                <br><br>
+                • Adjusting your budget range<br>
+                • Using different keywords (e.g., 'MBA', 'Engineering', 'Master')<br>
+                • Asking 'Show all programs' to see everything
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("</div></div>", unsafe_allow_html=True)
+        
+        # Action buttons row (dots, lightning, speaker icons)
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            # Dots menu button (placeholder)
+            st.markdown("""
+            <div style="text-align: center;">
+                <button class="icon-btn" style="background: #4A90E2;">⋯</button>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            # Lightning button (placeholder)
+            st.markdown("""
+            <div style="text-align: center;">
+                <button class="icon-btn" style="background: #4A90E2;">⚡</button>
+            </div>
+            """, unsafe_allow_html=True)
+        with col3:
+            # Speaker button (placeholder)
+            st.markdown("""
+            <div style="text-align: center;">
+                <button class="icon-btn" style="background: #4A90E2;">🔊</button>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Navigation buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            # Back button - Returns to listening state
+            if st.button("🔙 Back to Listening", use_container_width=True):
+                st.session_state.app_state = "listening"
+                st.rerun()
+        with col2:
+            # New Search button - Clears results and returns to listening
+            if st.button("🔄 New Search", use_container_width=True, type="primary"):
+                st.session_state.app_state = "listening"
+                st.session_state.query_results = None
+                st.rerun()
+        
+        # Stop Listening button - Returns to welcome screen and logs out
+        if st.button("Stop Listening", use_container_width=True):
+            st.session_state.app_state = "welcome"
+            st.session_state.authenticated = False
+            st.rerun()

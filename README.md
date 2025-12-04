@@ -1,10 +1,10 @@
-🎓 University Admission Assistant Chatbot
+🎓 Study Abroad Helper Chatbot
 
-An AI-powered conversational system that helps students explore and compare international universities using natural language processing and large language models.
+An AI-powered conversational system that helps students explore and compare international universities using a Retrieval-Augmented Generation (RAG) pipeline.
 
 📌 Table of Contents
 
-About the Project
+*   [About the Project](#-about-the-project)
 Key Features
 Demo
 Prerequisites
@@ -24,7 +24,7 @@ Contact & Support
 
 
 📖 About the Project
-This project is a complete AI-powered university admission chatbot designed to help students find the perfect university match. Instead of manually searching through dozens of websites, students can simply ask questions in natural language and get intelligent, data-driven responses.
+This project is a complete AI-powered system that helps students explore and compare international universities simply ask questions in natural language and get intelligent, data-driven responses.
 The chatbot uses:
 
 Natural Language Processing (NLP) to understand student queries
@@ -182,41 +182,36 @@ You: "Which one has the lowest tuition?"
 Bot: Compares tuition and recommends the most affordable
 
 📁 Project Structure
-university-admission-chatbot/
+study_abroad_chatbot/
 │
-├── 📂 notebooks/                           # jupyternotebooks
-│   ├── data_preprocessing.ipynb        # Load & preprocess data
-│   ├── NLP_and_Embedding.ipynb         # NLP & entity extraction
-│   ├── rag_system.ipy                  # Database operations
-│   ├── chatbot_engine.ipynb            # Main chatbot logic
-│   └── utils.ipynb                       # Helper functions
-│
-├── 📂 data/                          # Datasets
+├── 📂 data/
 │   ├── raw/
-│   │   └── all_programs.csv      # Original data
+│   │   └── all_programs_cleaned.xlsx        # Original raw data
 │   └── processed/
-│       └── allprograms_processed.csv     # Cleaned data
+│       ├── universities_data.csv            # Cleaned and preprocessed data
+│       ├── embeddings.pkl                    # Embedding vectors
+│       └── faiss_index.bin                   # FAISS index
 │
-├── 📂 src/                     # Jupyter notebooks
+├── 📂 scripts/
+│   ├── 01_data_loading.py                   # Load and clean data
+│   ├── 02_create_embeddings.py              # Generate embeddings
+│   ├── 03_build_faiss_index.py              # Build FAISS index
+│   ├── 04_setup_google_llm.py               # Setup Google LLM API
+│   ├── 05_rag_system.py                     # RAG system implementation
+│   └── 06_test_system.py                    # Test the RAG system
+│
+├── 📂 src/
 │   ├── __init__.py
-│   ├── UI.py
+│   ├── data_processor.py                    # Data preprocessing functions
+│   ├── embeddings_handler.py                # Embeddings management
+│   ├── faiss_manager.py                     # FAISS index management
+│   └── rag_pipeline.py                      # RAG pipeline and retrieval logic
 │
-├── 📂 docs/                          # Documentation
-│   ├── SETUP_INSTRUCTIONS.md
-│   ├── USAGE_GUIDE.md
-│   ├── ARCHITECTURE.md
-│   ├── API_DOCUMENTATION.md
-│   ├── DEPLOYMENT.md
-│   └── TROUBLESHOOTING.md
-│
-├── 📄 app.py                         # Main Streamlit application
-├── 📄 evaluate.py                    # Performance metrics
-├── 📄 process_data.py                # Data preprocessing script
-├── 📄 requirements.txt               # Python dependencies
-├── 📄 .env.example                   # Environment template
-├── 📄 .gitignore                     # Git ignore rules
-├── 📄 README.md                      # This file
-└── 📄 PROJECT_REPORT.md              # Final report
+├── 📄 app.py                                # Main Streamlit app
+├── 📄 .env                                  # API keys and environment variables
+├── 📄 requirements.txt                      # Required Python libraries
+├── 📄 README.md                             # Documentation
+└── 📄 .gitignore  
 File Descriptions:
 FilePurposeapp.pyMain Streamlit web app - runs the chatbot UIsrc/data_loader.pyLoads CSV and preprocesses university datasrc/query_processor.pyExtracts entities and classifies intent from user queriessrc/data_query_handler.pySearches and filters the databasesrc/chatbot_engine.pyOrchestrates all components and manages conversationsrequirements.txtLists all Python package dependencies.envStores sensitive information (API keys)tests/Contains pytest unit tests for all modulesdocs/Complete documentation and guides
 
@@ -468,7 +463,6 @@ Architecture
 
 
 <div align="center">
-Made by
 
 ⭐ If you found this helpful, please star the repository!
 </div>
