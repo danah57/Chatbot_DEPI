@@ -40,6 +40,61 @@ Project Objectives:
 ✅ Ensure response accuracy and relevance
 ✅ Enable multi-turn conversations with context retention
 
+## Recent Work & Integration Summary
+
+This repository was extended with a full Retrieval-Augmented Generation (RAG) pipeline and production-ready integrations. Changes and additions made in this workspace include:
+
+- **RAG pipeline and embeddings**: a notebook/script that builds text descriptions from the program dataset and creates SentenceTransformer embeddings (model: `all-MiniLM-L6-v2`). Embeddings are saved as `embeddings.npy` and a compatibility `embeddings.pkl`, and metadata is saved as `metadata.csv` in `./data/processed/`.
+
+- **FAISS index support**: optional FAISS index creation (`IndexFlatIP`) for fast cosine-similarity retrieval from normalized vectors. Index files are stored under `./data/processed/` (e.g. `faiss_index.bin`).
+
+- **LLM integration with retry & fallback**: created `notebooks/setup_llm2.py` which contains `LLMHelper` — wraps the Google Generative AI (Gemini) client, supports both `GEMINI_API_KEY` and `GOOGLE_API_KEY`, implements retry logic (3 attempts) and returns a safe fallback if the API is unavailable.
+
+- **Streamlit UI integration**: a dedicated app (`newapp.py`) now dynamically loads the RAG system and exposes a chat UI. The RAG system is cached in Streamlit session state and returns both the generated answer and the matched program records.
+
+- **Robust environment loading**: `.env` loading is handled from multiple candidate locations; the LLM helper checks both `GEMINI_API_KEY` and `GOOGLE_API_KEY` environment variables.
+
+- **Improved developer ergonomics**: the Streamlit app prints the full RAG result (JSON-friendly) to the console for debugging; logging and debug modes are available.
+
+- **Compatibility & dependencies**: updated `requirements.txt` contains `sentence-transformers`, `faiss-cpu`, `google-generativeai` (or compatible `google.genai`), and other required libraries. Installation with `pip install -r requirements.txt` is recommended before running the app.
+
+Where to look in the repo:
+
+- `notebooks/02_NLP_and_Embeddings.py` — create embeddings, metadata, optional Faiss index
+- `notebooks/setup_llm2.py` — `LLMHelper` with retry/fallback
+- `notebooks/05_rag_system.py` — RAG system orchestration (encode, search, format, prompt)
+- `newapp.py` — Streamlit UI integrated with RAG system
+- `.env` / `.env.example` — API key and config
+
+How to run the integrated system (quick):
+
+1. Create and activate virtualenv, then install dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+2. Ensure your `.env` contains the LLM API key (examples accept `GEMINI_API_KEY` or `GOOGLE_API_KEY`):
+
+```dotenv
+GEMINI_API_KEY=your_key_here
+```
+
+3. (Optional) Recreate embeddings and FAISS index if you change data:
+
+```powershell
+python notebooks/02_NLP_and_Embeddings.py ./data/all_programs_cleaned.xlsx --output-dir ./data/processed --faiss
+python notebooks/03_faiss_index.py ./data/processed/embeddings.pkl --output-dir ./data/processed
+```
+
+4. Start the Streamlit app:
+
+```powershell
+streamlit run newapp.py
+```
+
+Open `http://localhost:8501` and test queries (the full RAG result will be printed in the terminal for debugging).
+
 ⭐ Key Features
 🤖 Smart Conversational AI
 
